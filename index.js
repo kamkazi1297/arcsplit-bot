@@ -75,6 +75,8 @@ class TelegramBot {
         
         await this.sendMessage(chatId, `📤 Send Request:\n${amount} ${tokenSym} to ${addresses.length} addresses`);
         await this.sendMessage(chatId, `🔗 Click to confirm:\n${siteUrl}`);
+      } else {
+        await this.sendMessage(chatId, "❌ Wrong format!\nUse: send <amount> <token> <address1> <address2> ...");
       }
     } 
     else if (text === '/start') {
@@ -82,4 +84,3 @@ class TelegramBot {
     }
   }
 }
-
