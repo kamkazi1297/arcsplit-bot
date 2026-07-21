@@ -17,22 +17,12 @@ app.post('/webhook', (req, res) => {
   res.sendStatus(200);
 });
 
-// جدید: دریافت هش تراکنش از سایت
 app.post('/send-tx', (req, res) => {
   const { telegramUsername, txHash, amount, token, recipientsCount } = req.body;
-  
-  if (!txHash) return res.sendStatus(200);
-
-  const message = `✅ Transaction Successful!\n\n` +
-                  `Amount: ${amount} ${token}\n` +
-                  `Recipients: ${recipientsCount}\n` +
-                  `Hash: ${txHash}\n\n` +
-                  `https://testnet.arcscan.app/tx/${txHash}`;
-
-  // ارسال به کاربر (برای سادگی، پیام عمومی)
-  bot.sendMessage(telegramUsername.replace('@', ''), message, { parse_mode: 'HTML' })
-    .catch(() => {});
-
+  if (txHash && telegramUsername) {
+    const message = `✅ Transaction Successful!\n\nAmount: ${amount} ${token}\nRecipients: ${recipientsCount}\n\nTx Hash: ${txHash}\n\nhttps://testnet.arcscan.app/tx/${txHash}`;
+    bot.sendMessage(telegramUsername.replace('@', ''), message).catch(() => {});
+  }
   res.sendStatus(200);
 });
 
@@ -47,11 +37,22 @@ bot.on('message', (msg) => {
     bot.sendMessage(chatId, siteUrl);
   } 
   else if (text.toLowerCase().startsWith('send ')) {
-    // ... (کد قبلی send)
-    bot.sendMessage(chatId, "📤 Command received. Opening website...");
+    const parts = text.split(/\s+/);
+    const amount = parts[1] || '';
+    const tokenSym = parts[2] ? parts[2].toUpperCase() : '';
+    const addresses = parts.slice(3);
+
+    if (amount && tokenSym && addresses.length > 0) {
+      const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=send&amount=${amount}&token=${tokenSym}&addresses=${addresses.join(',')}&username=${username}`;
+      
+      bot.sendMessage(chatId, `📤 Send Request Received!\nAmount: ${amount} ${tokenSym}\nRecipients: ${addresses.length}`);
+      bot.sendMessage(chatId, `🔗 Click to confirm:\n${siteUrl}`);
+    } else {
+      bot.sendMessage(chatId, "❌ Wrong format! Use: send <amount> <token> <address1> <address2> ...");
+    }
   } 
   else if (text === '/start') {
-    bot.sendMessage(chatId, `✅ Bot Online!\nHello ${username}`);
+    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}`);
   }
 });
 
