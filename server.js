@@ -18,31 +18,35 @@ app.use((req, res, next) => {
 
 app.get('/', (req, res) => res.send('✅ Bot Online'));
 
-app.post('/send-tx', async (req, res) => {
-  console.log("📥 Received:", req.body);
+// ذخیره chat_id + username
+let userData = {};
+
+app.post('/send-tx', (req, res) => {
+  const { telegramUsername, txHash, amount, token, recipientsCount } = req.body;
   
-  const { telegramUsername, txHash, amount = '?', token = '', recipientsCount = '?' } = req.body;
-  
-  if (!txHash || !telegramUsername) {
-    console.log("❌ Missing username or hash");
-    return res.sendStatus(200);
+  if (txHash && telegramUsername) {
+    const cleanUsername = telegramUsername.replace('@', '');
+    const message = `✅ Transaction Successful!\n\nAmount: ${amount} ${token}\nRecipients: ${recipientsCount}\n\nHash: ${txHash}\n\n🔗 https://testnet.arcscan.app/tx/${txHash}`;
+
+    bot.sendMessage(cleanUsername, message)
+      .then(() => console.log("Sent to", cleanUsername))
+      .catch(e => console.log("Error:", e.message));
   }
-
-  const cleanUsername = telegramUsername.replace('@', '');
-  const message = `✅ Transaction Successful!\n\n` +
-                  `Amount: ${amount} ${token}\n` +
-                  `Recipients: ${recipientsCount}\n\n` +
-                  `Hash: ${txHash}\n\n` +
-                  `🔗 https://testnet.arcscan.app/tx/${txHash}`;
-
-  try {
-    await bot.sendMessage(cleanUsername, message);
-    console.log(`✅ Successfully sent to @${cleanUsername}`);
-  } catch (e) {
-    console.log(`❌ Failed to send to @${cleanUsername}:`, e.message);
-  }
-
   res.sendStatus(200);
+});
+
+bot.on('message', (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text ? msg.text.trim() : '';
+  const username = msg.from && msg.from.username ? `@${msg.from.username}` : "User";
+
+  userData[chatId] = username;
+
+  if (text.startsWith('/start wallet_')) {
+    const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=connect&username=${username}&chatId=${chatId}`;
+    bot.sendMessage(chatId, `✅ Connected!\nTelegram: ${username}`);
+    bot.sendMessage(chatId, siteUrl);
+  }
 });
 
 const PORT = process.env.PORT || 3000;
