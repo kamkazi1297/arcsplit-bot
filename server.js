@@ -16,24 +16,31 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => res.send('✅ ArcSplit Bot Online'));
+app.get('/', (req, res) => res.send('✅ Bot Online'));
 
-app.post('/send-tx', (req, res) => {
-  console.log("📥 Received data:", req.body);
+app.post('/send-tx', async (req, res) => {
+  console.log("📥 Received:", req.body);
   
-  const { telegramUsername, txHash, amount, token, recipientsCount } = req.body;
+  const { telegramUsername, txHash, amount = '?', token = '', recipientsCount = '?' } = req.body;
   
   if (!txHash || !telegramUsername) {
-    console.log("❌ Missing data");
+    console.log("❌ Missing username or hash");
     return res.sendStatus(200);
   }
 
   const cleanUsername = telegramUsername.replace('@', '');
-  const message = `✅ Transaction Successful!\n\nAmount: ${amount || '?'} ${token || ''}\nRecipients: ${recipientsCount || '?'}\n\nHash: ${txHash}\n\n🔗 https://testnet.arcscan.app/tx/${txHash}`;
+  const message = `✅ Transaction Successful!\n\n` +
+                  `Amount: ${amount} ${token}\n` +
+                  `Recipients: ${recipientsCount}\n\n` +
+                  `Hash: ${txHash}\n\n` +
+                  `🔗 https://testnet.arcscan.app/tx/${txHash}`;
 
-  bot.sendMessage(cleanUsername, message)
-    .then(() => console.log(`✅ Sent to @${cleanUsername}`))
-    .catch(e => console.log("❌ Telegram Error:", e.message));
+  try {
+    await bot.sendMessage(cleanUsername, message);
+    console.log(`✅ Successfully sent to @${cleanUsername}`);
+  } catch (e) {
+    console.log(`❌ Failed to send to @${cleanUsername}:`, e.message);
+  }
 
   res.sendStatus(200);
 });
