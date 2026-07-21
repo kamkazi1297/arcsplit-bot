@@ -8,6 +8,15 @@ const app = express();
 
 app.use(express.json());
 
+// CORS Fix - خیلی مهم
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.get('/', (req, res) => {
   res.send('✅ ArcSplit Telegram Bot is Online!');
 });
@@ -17,11 +26,20 @@ app.post('/webhook', (req, res) => {
   res.sendStatus(200);
 });
 
+// ارسال هش تراکنش به تلگرام
 app.post('/send-tx', (req, res) => {
   const { telegramUsername, txHash, amount, token, recipientsCount } = req.body;
+  
   if (txHash && telegramUsername) {
-    const message = `✅ Transaction Successful!\n\nAmount: ${amount} ${token}\nRecipients: ${recipientsCount}\n\nTx Hash: ${txHash}\n\nhttps://testnet.arcscan.app/tx/${txHash}`;
-    bot.sendMessage(telegramUsername.replace('@', ''), message).catch(() => {});
+    const message = `✅ Transaction Successful!\n\n` +
+                    `Amount: ${amount} ${token}\n` +
+                    `Recipients: ${recipientsCount}\n\n` +
+                    `Tx Hash: ${txHash}\n\n` +
+                    `🔗 https://testnet.arcscan.app/tx/${txHash}`;
+    
+    bot.sendMessage(telegramUsername.replace('@', ''), message)
+      .then(() => console.log("✅ Hash sent to Telegram"))
+      .catch(err => console.log("Telegram error:", err));
   }
   res.sendStatus(200);
 });
@@ -45,10 +63,8 @@ bot.on('message', (msg) => {
     if (amount && tokenSym && addresses.length > 0) {
       const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=send&amount=${amount}&token=${tokenSym}&addresses=${addresses.join(',')}&username=${username}`;
       
-      bot.sendMessage(chatId, `📤 Send Request Received!\nAmount: ${amount} ${tokenSym}\nRecipients: ${addresses.length}`);
+      bot.sendMessage(chatId, `📤 Send Request:\n${amount} ${tokenSym} to ${addresses.length} addresses`);
       bot.sendMessage(chatId, `🔗 Click to confirm:\n${siteUrl}`);
-    } else {
-      bot.sendMessage(chatId, "❌ Wrong format! Use: send <amount> <token> <address1> <address2> ...");
     }
   } 
   else if (text === '/start') {
