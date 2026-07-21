@@ -22,16 +22,23 @@ bot.on('message', (msg) => {
   const text = msg.text ? msg.text.trim() : '';
   const username = msg.from && msg.from.username ? `@${msg.from.username}` : "User";
 
-  console.log(`Message: ${text}`);
-
   if (text === '/start' || text.startsWith('/start ')) {
-    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}\n\nUse: send <amount> <token> <address1> <address2> ...`);
+    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}\n\nExample:\nsend 100 USDC 0xaddr1 0xaddr2`);
   } 
   else if (text.toLowerCase().startsWith('send ')) {
-    bot.sendMessage(chatId, `📤 Send command received!\n\nOpening website to confirm...`);
-    
-    // اینجا می‌تونیم لینک سایت با پارامترها بفرستیم (بعداً کامل می‌کنیم)
-    bot.sendMessage(chatId, `https://arcsplit.kamkazi-1297.workers.dev/`);
+    const parts = text.split(/\s+/);
+    const amount = parts[1] || '';
+    const token = parts[2] ? parts[2].toUpperCase() : '';
+    const addresses = parts.slice(3);
+
+    if (!amount || !token || addresses.length === 0) {
+      return bot.sendMessage(chatId, "❌ Format wrong.\nUse: send <amount> <token> <address1> <address2> ...");
+    }
+
+    const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=send&amount=${amount}&token=${token}&addresses=${addresses.join(',')}`;
+
+    bot.sendMessage(chatId, `📤 Send Request Received!\nAmount: ${amount} ${token}\nRecipients: ${addresses.length}\n\n🔗 Click to confirm:`);
+    bot.sendMessage(chatId, siteUrl);
   } 
   else {
     bot.sendMessage(chatId, `You said: ${text}`);
