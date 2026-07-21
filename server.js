@@ -16,21 +16,23 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => res.send('✅ Bot Online'));
+app.get('/', (req, res) => res.send('✅ ArcSplit Bot is Online!'));
 
-// ذخیره chat_id + username
-let userData = {};
+app.post('/webhook', (req, res) => {
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
+});
 
+// ارسال هش تراکنش
 app.post('/send-tx', (req, res) => {
-  const { telegramUsername, txHash, amount, token, recipientsCount } = req.body;
+  const { chatId, txHash, amount, token, recipientsCount } = req.body;
   
-  if (txHash && telegramUsername) {
-    const cleanUsername = telegramUsername.replace('@', '');
+  if (txHash && chatId) {
     const message = `✅ Transaction Successful!\n\nAmount: ${amount} ${token}\nRecipients: ${recipientsCount}\n\nHash: ${txHash}\n\n🔗 https://testnet.arcscan.app/tx/${txHash}`;
-
-    bot.sendMessage(cleanUsername, message)
-      .then(() => console.log("Sent to", cleanUsername))
-      .catch(e => console.log("Error:", e.message));
+    
+    bot.sendMessage(chatId, message)
+      .then(() => console.log("✅ Hash sent to Telegram"))
+      .catch(e => console.log("Telegram send error:", e.message));
   }
   res.sendStatus(200);
 });
@@ -40,12 +42,16 @@ bot.on('message', (msg) => {
   const text = msg.text ? msg.text.trim() : '';
   const username = msg.from && msg.from.username ? `@${msg.from.username}` : "User";
 
-  userData[chatId] = username;
-
   if (text.startsWith('/start wallet_')) {
     const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=connect&username=${username}&chatId=${chatId}`;
-    bot.sendMessage(chatId, `✅ Connected!\nTelegram: ${username}`);
+    bot.sendMessage(chatId, `✅ Connected successfully!\nTelegram: ${username}`);
     bot.sendMessage(chatId, siteUrl);
+  } 
+  else if (text.toLowerCase().startsWith('send ')) {
+    bot.sendMessage(chatId, `📤 Command received. Opening website...`);
+  } 
+  else if (text === '/start') {
+    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}`);
   }
 });
 
