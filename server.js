@@ -22,30 +22,32 @@ bot.on('message', (msg) => {
   const text = msg.text ? msg.text.trim() : '';
   const username = msg.from && msg.from.username ? `@${msg.from.username}` : "User";
 
-  if (text === '/start' || text.startsWith('/start ')) {
-    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}\n\nExample:\nsend 100 USDC 0xaddr1 0xaddr2`);
+  if (text.startsWith('/start wallet_')) {
+    const parts = text.split('_');
+    const wallet = parts[2] || '';
+    
+    const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=connect&username=${username}`;
+
+    bot.sendMessage(chatId, `✅ Connected successfully!\nTelegram: ${username}`);
+    bot.sendMessage(chatId, siteUrl);
   } 
   else if (text.toLowerCase().startsWith('send ')) {
     const parts = text.split(/\s+/);
     const amount = parts[1] || '';
-    const token = parts[2] ? parts[2].toUpperCase() : '';
+    const tokenSym = parts[2] ? parts[2].toUpperCase() : '';
     const addresses = parts.slice(3);
 
-    if (!amount || !token || addresses.length === 0) {
-      return bot.sendMessage(chatId, "❌ Format wrong.\nUse: send <amount> <token> <address1> <address2> ...");
+    if (amount && tokenSym && addresses.length > 0) {
+      const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=send&amount=${amount}&token=${tokenSym}&addresses=${addresses.join(',')}&username=${username}`;
+      
+      bot.sendMessage(chatId, `📤 Send Request:\n${amount} ${tokenSym} to ${addresses.length} addresses`);
+      bot.sendMessage(chatId, siteUrl);
     }
-
-    const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=send&amount=${amount}&token=${token}&addresses=${addresses.join(',')}`;
-
-    bot.sendMessage(chatId, `📤 Send Request Received!\nAmount: ${amount} ${token}\nRecipients: ${addresses.length}\n\n🔗 Click to confirm:`);
-    bot.sendMessage(chatId, siteUrl);
   } 
-  else {
-    bot.sendMessage(chatId, `You said: ${text}`);
+  else if (text === '/start') {
+    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}`);
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Bot running`);
-});
+app.listen(PORT, () => console.log('Bot running'));
