@@ -8,7 +8,7 @@ const app = express();
 
 app.use(express.json());
 
-// CORS
+// CORS Fix
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', '*');
@@ -17,26 +17,23 @@ app.use((req, res, next) => {
   next();
 });
 
-app.get('/', (req, res) => res.send('✅ ArcSplit Bot is Online!'));
-
-app.post('/webhook', (req, res) => {
-  bot.processUpdate(req.body);
-  res.sendStatus(200);
+app.get('/', (req, res) => {
+  res.send('✅ ArcSplit Telegram Bot is Online!');
 });
 
-// ارسال هش تراکنش
+// ارسال هش تراکنش به تلگرام
 app.post('/send-tx', (req, res) => {
   const { chatId, txHash, amount, token, recipientsCount } = req.body;
   
   if (txHash && chatId) {
-    const message = `✅ تراکنش با موفقیت انجام شد!\n\n` +
-                    `مقدار: ${amount} ${token}\n` +
-                    `تعداد گیرنده: ${recipientsCount}\n\n` +
-                    `هش: ${txHash}\n\n` +
+    const message = `✅ Transaction Successful!\n\n` +
+                    `Amount: ${amount} ${token}\n` +
+                    `Recipients: ${recipientsCount}\n\n` +
+                    `Transaction Hash:\n${txHash}\n\n` +
                     `🔗 https://testnet.arcscan.app/tx/${txHash}`;
 
     bot.sendMessage(chatId, message)
-      .then(() => console.log("✅ Hash sent"))
+      .then(() => console.log("✅ Hash sent to Telegram"))
       .catch(e => console.log("Telegram Error:", e.message));
   }
   res.sendStatus(200);
@@ -47,13 +44,12 @@ bot.on('message', (msg) => {
   const text = msg.text ? msg.text.trim() : '';
   const username = msg.from && msg.from.username ? `@${msg.from.username}` : "User";
 
-  // اتصال از سایت
   if (text.startsWith('/start wallet_')) {
     const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=connect&username=${username}&chatId=${chatId}`;
+    
     bot.sendMessage(chatId, `✅ Connected successfully!\nTelegram: ${username}`);
     bot.sendMessage(chatId, siteUrl);
   } 
-  // دستور send
   else if (text.toLowerCase().startsWith('send ')) {
     const parts = text.split(/\s+/);
     const amount = parts[1] || '';
@@ -63,17 +59,16 @@ bot.on('message', (msg) => {
     if (amount && tokenSym && addresses.length > 0) {
       const siteUrl = `https://arcsplit.kamkazi-1297.workers.dev/?action=send&amount=${amount}&token=${tokenSym}&addresses=${addresses.join(',')}&username=${username}&chatId=${chatId}`;
       
-      bot.sendMessage(chatId, `📤 Send Request Received!\n${amount} ${tokenSym} → ${addresses.length} addresses`);
-      bot.sendMessage(chatId, `🔗 Click to confirm:\n${siteUrl}`);
+      bot.sendMessage(chatId, `📤 Send Request:\n${amount} ${tokenSym} to ${addresses.length} addresses`);
+      bot.sendMessage(chatId, `🔗 Click here to confirm:\n${siteUrl}`);
     } else {
-      bot.sendMessage(chatId, "❌ Format: send <amount> <token> <address1> <address2> ...");
+      bot.sendMessage(chatId, "❌ Wrong format!\nUse: send <amount> <token> <address1> <address2> ...");
     }
   } 
-  // start
   else if (text === '/start') {
-    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}\n\nUse: send 100 USDC 0x...`);
+    bot.sendMessage(chatId, `✅ Bot is Online!\nHello ${username}\n\nSend command like:\nsend 100 USDC 0x...`);
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log('🚀 Bot running'));
+app.listen(PORT, () => console.log('🚀 ArcSplit Bot is running'));
